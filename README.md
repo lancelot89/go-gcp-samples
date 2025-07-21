@@ -9,12 +9,17 @@
 ```
 /
 ├── v1-cloud-run/  # Google Cloud Run サンプル
+├── v2-firestore/  # Google Cloud Firestore サンプル
 └── ...            # 今後、他のGCPサービスサンプルを追加予定
 ```
 
 ### `v1-cloud-run`
 
 [go-cloudrun-example](https://github.com/lancelot89/go-cloudrun-example) の履歴を完全に引き継いだ、Google Cloud Runのサンプルアプリケーションです。
+
+### `v2-firestore`
+
+Google Cloud Firestore を利用したサンプルアプリケーションです。
 
 ## Goワークスペース
 
