@@ -32,7 +32,7 @@ Firestore エミュレータと Go アプリケーションを Docker Compose �
     ```bash
     docker compose up --build
     ```
-    これにより、Firestore エミュレータと Go アプリケーションが起動します。Go アプリケーションはホストの `8081` ポートでリッスンします。
+    これにより、Firestore エミュレータと Go アプリケーションが起動します。Goアプリケーションはホストの `8081` ポートでリッスンします。
 
 ### 2. API エンドポイントの利用
 
