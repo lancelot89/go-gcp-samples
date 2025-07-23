@@ -1,8 +1,7 @@
 name: Push v2-firestore to Artifact Registry
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches:
       - main
     paths:
