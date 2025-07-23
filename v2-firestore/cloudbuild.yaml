@@ -1,7 +1,7 @@
 steps:
   # Start Firestore Emulator for testing
   - name: 'gcr.io/cloud-builders/docker'
-    args: ["compose", "-f", "docker-compose.fire.yml", "up", "-d"]
+    args: ["compose", "-f", "/v2-firestore/docker-compose.fire.yml", "up", "-d"]
     dir: "."
 
   # Wait for Firestore Emulator to be ready (optional, but good practice)
