@@ -30,7 +30,7 @@ steps:
     args:
       - 'push'
       - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/go-gcp-samples/v2-firestore:$COMMIT_SHA'
-    dir: "."
+    dir: "v2-firestore"
 
   # Deploy container image to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -47,7 +47,7 @@ steps:
       - 'managed'
       - '--allow-unauthenticated'
       - '--set-env-vars=PROJECT_ID=$PROJECT_ID' # Pass PROJECT_ID to the Cloud Run service
-    dir: "."
+    dir: "v2-firestore"
 
 options:
   logging: CLOUD_LOGGING_ONLY
