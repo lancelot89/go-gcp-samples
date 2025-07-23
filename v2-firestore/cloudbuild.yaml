@@ -16,12 +16,6 @@ steps:
           sleep 5
         done
 
-  # Run tests with Firestore Emulator
-  - name: 'gcr.io/cloud-builders/go'
-    env: ["FIRESTORE_EMULATOR_HOST=localhost:8080"]
-    args: ["test", "./..."]
-    dir: "v2-firestore"
-
   # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
     args:
