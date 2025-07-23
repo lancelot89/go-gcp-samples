@@ -21,7 +21,7 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/v2-firestore-service:$COMMIT_SHA'
+      - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/go-gcp-samples/v2-firestore:$COMMIT_SHA'
       - '.'
     dir: "."
 
@@ -29,7 +29,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/v2-firestore-service:$COMMIT_SHA'
+      - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/go-gcp-samples/v2-firestore:$COMMIT_SHA'
     dir: "."
 
   # Deploy container image to Cloud Run
@@ -38,9 +38,9 @@ steps:
     args:
       - 'run'
       - 'deploy'
-      - 'v2-firestore-service'
+      - 'v2-firestore'
       - '--image'
-      - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/v2-firestore-service:$COMMIT_SHA'
+      - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/go-gcp-samples/v2-firestore:$COMMIT_SHA'
       - '--region'
       - 'asia-northeast1'
       - '--platform'
