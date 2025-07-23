@@ -20,7 +20,7 @@ steps:
   - name: 'gcr.io/cloud-builders/go'
     env: ["FIRESTORE_EMULATOR_HOST=localhost:8080"]
     args: ["test", "./..."]
-    dir: "."
+    dir: "v2-firestore"
 
   # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
