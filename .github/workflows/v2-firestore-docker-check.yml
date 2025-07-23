@@ -1,0 +1,69 @@
+name: V2 Firestore Docker Compose Check
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'v2-firestore/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'v2-firestore/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and run Docker Compose services
+        run: docker compose up --build -d
+        working-directory: ./v2-firestore
+
+      - name: Wait for Firestore Emulator to be healthy
+        run: |
+          echo "Waiting for Firestore Emulator to be healthy..."
+          for i in $(seq 1 60); do
+            if docker compose -f ./v2-firestore/docker-compose.yml ps firestore-emulator | grep -q "healthy"; then
+              echo "Firestore Emulator is healthy."
+              break
+            fi
+            echo "Still waiting for Firestore Emulator..."
+            sleep 5
+          done
+          docker compose -f ./v2-firestore/docker-compose.yml ps firestore-emulator | grep -q "healthy" || (echo "Firestore Emulator did not become healthy in time." && exit 1)
+
+      - name: Wait for Go App to be responsive
+        run: |
+          echo "Waiting for Go App to be responsive..."
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:8081/todos > /dev/null; then
+              echo "Go App is responsive."
+              break
+            fi
+            echo "Still waiting for Go App..."
+            sleep 2
+          done
+          curl -s http://localhost:8081/todos > /dev/null || (echo "Go App did not become responsive in time." && exit 1)
+
+      - name: Test Go App endpoint (POST)
+        run: |
+          curl -X POST -H "Content-Type: application/json" -d '{"userId": "github-action", "title": "Test Todo from GitHub Action"}' http://localhost:8081/todos
+        working-directory: ./v2-firestore
+
+      - name: Test Go App endpoint (GET)
+        run: |
+          curl "http://localhost:8081/todos?id=github-action-Test%20Todo%20from%20GitHub%20Action"
+        working-directory: ./v2-firestore
+
+      - name: Clean up Docker Compose services
+        if: always()
+        run: docker compose down
+        working-directory: ./v2-firestore
