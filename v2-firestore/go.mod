@@ -1,6 +1,6 @@
 module go-gcp-samples/v2-firestore
 
-go 1.24.3
+go 1.24.6
 
 require (
 	cloud.google.com/go/firestore v1.18.0

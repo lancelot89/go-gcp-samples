@@ -1,2 +1,85 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+*.cover
+*.html
+coverage.txt
+
+# Dependency directories
+vendor/
+
+# Go workspace files
+go.work.sum
+
+# IDE specific files
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# GCP specific
+*.json
+!*.example.json
+service-account-key.json
+gcp-key.json
+credentials.json
+
+# Firebase/Firestore emulator
+firestore-debug.log
+ui-debug.log
+firebase-debug.log
+.firebase/
+
+# Docker
+docker-compose.override.yml
+
+# Build artifacts
+build/
+tmp/
+temp/
+
+# Log files
+*.log
+logs/
+
+# OS generated files
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+!*.example.tfvars
+
+# Local development
 .gitconfig
 CLAUDE.md
+
+# Cloud Build local files
+.gcloudignore
+
+# Go module cache
+go.sum.backup

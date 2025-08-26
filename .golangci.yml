@@ -1,0 +1,64 @@
+run:
+  timeout: 5m
+  tests: false
+  skip-dirs:
+    - vendor
+    - third_party
+    - testdata
+    - examples
+  skip-files:
+    - ".*\\.pb\\.go$"
+    - ".*\\.gen\\.go$"
+
+linters:
+  enable:
+    - gosimple
+    - govet
+    - staticcheck
+    - ineffassign
+    - errcheck
+    - gofmt
+    - goimports
+    - revive
+    - misspell
+    - unconvert
+    - goconst
+    - gocyclo
+    - gocognit
+    - bodyclose
+    - noctx
+    - prealloc
+
+linters-settings:
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/lancelot89/go-gcp-samples
+  revive:
+    confidence: 0.8
+  goconst:
+    min-len: 2
+    min-occurrences: 3
+  gocyclo:
+    min-complexity: 15
+  gocognit:
+    min-complexity: 20
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
+issues:
+  exclude-use-default: false
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - gocognit
+        - errcheck
+        - dupl
+        - gosec
+    - linters:
+        - staticcheck
+      text: "SA1019:"
+  max-issues-per-linter: 50
+  max-same-issues: 10
