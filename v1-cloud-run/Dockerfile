@@ -1,33 +1,31 @@
-# Use the official Golang image to create a build artifact.
-# This is known as a multi-stage build.
-FROM golang:1.24 AS builder
+# Build stage
+FROM golang:1.24.6 AS builder
 
-# Set the Current Working Directory inside the container
 WORKDIR /app
 
-# Copy go mod file
-COPY go.mod ./
-
-# Download all dependencies. Dependencies will be cached if the go.mod file is not changed
+# Copy go mod file first for better caching
+COPY go.mod go.sum* ./
 RUN go mod download
 
-# Copy the source code from the current directory to the Working Directory inside the container
+# Copy source code
 COPY . .
 
-# Build the Go app
-RUN CGO_ENABLED=0 GOOS=linux go build -v -o server .
+# Build with optimization flags
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags='-w -s -extldflags "-static"' \
+    -o server .
 
-# Start a new stage from scratch for a smaller image
-FROM alpine:latest
+# Final stage using distroless base image
+FROM gcr.io/distroless/static-debian12:nonroot
 
-# Set the Current Working Directory inside the container
-WORKDIR /root/
+# Copy the binary from builder
+COPY --from=builder /app/server /server
 
-# Copy the Pre-built binary file from the previous stage
-COPY --from=builder /app/server .
+# Use non-root user
+USER nonroot:nonroot
 
-# Expose port 8080 to the outside world
+# Expose port (informational)
 EXPOSE 8080
 
-# Command to run the executable
-CMD ["./server"]
+# Run the binary
+ENTRYPOINT ["/server"]

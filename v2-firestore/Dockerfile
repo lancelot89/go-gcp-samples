@@ -1,39 +1,34 @@
-# Use the official Go image to build the application
-FROM golang:1.24-alpine AS builder
+# Build stage
+FROM golang:1.24.6 AS builder
 
-# Set necessary environment variables for Go modules
-ENV GO111MODULE=on
-ENV CGO_ENABLED=0
-
-# Set the working directory inside the container
 WORKDIR /app
 
-# Copy go.mod and go.sum first to leverage Docker cache
-COPY go.mod go.sum ./ 
-
-# Download all dependencies. Dependencies will be cached if go.mod and go.sum are not changed
+# Copy go mod files first for better caching
+COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the rest of the application source code
+# Copy source code
 COPY . .
 
-# Build the application
-RUN go build -o /go-gcp-samples-v2-firestore ./cmd/server
+# Build with optimization flags
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags='-w -s -extldflags "-static"' \
+    -o server ./cmd/server
 
-# Use a minimal image for the final stage
-FROM alpine:latest
+# Final stage using distroless base image
+FROM gcr.io/distroless/static-debian12:nonroot
 
-# Set the working directory
-WORKDIR /app
+# Copy the binary from builder
+COPY --from=builder /app/server /server
 
-# Copy the compiled application from the builder stage
-COPY --from=builder /go-gcp-samples-v2-firestore .
+# Use non-root user
+USER nonroot:nonroot
 
-# Expose the port the application listens on
+# Expose port (informational)
 EXPOSE 8080
 
-# Set environment variables for the application
+# Set environment variables
 ENV PORT=8080
 
-# Command to run the application
-CMD ["./go-gcp-samples-v2-firestore"]
+# Run the binary
+ENTRYPOINT ["/server"]
