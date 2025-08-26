@@ -51,13 +51,13 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/todos", handler.CreateTodo).Methods("POST")
 	r.HandleFunc("/todos", handler.GetTodo).Methods("GET")
-	
+
 	// ヘルスチェックエンドポイント
 	r.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("OK"))
 	}).Methods("GET")
-	
+
 	r.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
 		// Firestore接続確認
 		_, err := client.Collection("health_check").Doc("test").Get(ctx)
