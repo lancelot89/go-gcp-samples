@@ -34,7 +34,7 @@ func (h *TodoHandler) CreateTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(todo)
+	_ = json.NewEncoder(w).Encode(todo)
 }
 
 func (h *TodoHandler) GetTodo(w http.ResponseWriter, r *http.Request) {
@@ -51,5 +51,5 @@ func (h *TodoHandler) GetTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(todo)
+	_ = json.NewEncoder(w).Encode(todo)
 }
