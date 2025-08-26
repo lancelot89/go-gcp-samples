@@ -83,6 +83,40 @@ func TestHandlerMethods(t *testing.T) {
 	}
 }
 
+func TestHealthzHandler(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	rec := httptest.NewRecorder()
+
+	healthzHandler(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("healthzHandler() status = %v, want %v", rec.Code, http.StatusOK)
+	}
+
+	got := rec.Body.String()
+	want := "OK"
+	if got != want {
+		t.Errorf("healthzHandler() body = %v, want %v", got, want)
+	}
+}
+
+func TestReadyzHandler(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/readyz", nil)
+	rec := httptest.NewRecorder()
+
+	readyzHandler(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("readyzHandler() status = %v, want %v", rec.Code, http.StatusOK)
+	}
+
+	got := rec.Body.String()
+	want := "READY"
+	if got != want {
+		t.Errorf("readyzHandler() body = %v, want %v", got, want)
+	}
+}
+
 func BenchmarkHandler(b *testing.B) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 
