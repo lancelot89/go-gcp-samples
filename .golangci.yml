@@ -1,14 +1,6 @@
 run:
   timeout: 5m
   tests: false
-  skip-dirs:
-    - vendor
-    - third_party
-    - testdata
-    - examples
-  skip-files:
-    - ".*\\.pb\\.go$"
-    - ".*\\.gen\\.go$"
 
 linters:
   enable:
@@ -45,10 +37,18 @@ linters-settings:
     min-complexity: 20
   errcheck:
     check-type-assertions: true
-    check-blank: true
+    check-blank: false
 
 issues:
   exclude-use-default: false
+  exclude-dirs:
+    - vendor
+    - third_party
+    - testdata
+    - examples
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*\\.gen\\.go$"
   exclude-rules:
     - path: _test\.go
       linters:
