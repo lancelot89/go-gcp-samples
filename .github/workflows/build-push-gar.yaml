@@ -1,0 +1,97 @@
+name: Build and Push to GAR
+
+on:
+  workflow_dispatch:
+    inputs:
+      module:
+        description: 'Module to build (v1-cloud-run or v2-firestore)'
+        required: true
+        type: choice
+        options:
+          - v1-cloud-run
+          - v2-firestore
+  push:
+    branches:
+      - main
+    paths:
+      - 'v1-cloud-run/**'
+      - 'v2-firestore/**'
+      - '.github/workflows/build-push-gar.yaml'
+
+env:
+  # プロジェクトIDとリージョンは GitHub Secrets で設定
+  # PROJECT_ID: your-gcp-project-id
+  # REGION: asia-northeast1
+  GAR_REPOSITORY: samples
+
+permissions:
+  contents: read
+  id-token: write # OIDC トークンの取得に必要
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: ${{ fromJson(github.event_name == 'workflow_dispatch' && format('["{0}"]', inputs.module) || '["v1-cloud-run", "v2-firestore"]') }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # OIDC による GCP 認証
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker auth for GAR
+        run: |
+          gcloud auth configure-docker ${{ secrets.REGION }}-docker.pkg.dev
+
+      - name: Determine image metadata
+        id: meta
+        run: |
+          MODULE="${{ matrix.module }}"
+          SERVICE_NAME=${MODULE/v[0-9]-/}  # v1-cloud-run -> cloud-run
+          IMAGE_NAME="${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/$SERVICE_NAME"
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            TAGS="${IMAGE_NAME}:${SHORT_SHA},${IMAGE_NAME}:latest"
+          else
+            TAGS="${IMAGE_NAME}:manual-${SHORT_SHA}"
+          fi
+          
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
+          echo "service_name=$SERVICE_NAME" >> $GITHUB_OUTPUT
+          echo "Building image: $IMAGE_NAME"
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.module }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+          provenance: false # マルチプラットフォームビルドで必要
+
+      - name: Output image info
+        run: |
+          echo "✅ Successfully pushed Docker image:"
+          echo "   Tags: ${{ steps.meta.outputs.tags }}"
+          echo ""
+          echo "📝 To deploy to Cloud Run:"
+          echo "   gcloud run deploy ${{ steps.meta.outputs.service_name }} \\"
+          echo "     --image $(echo '${{ steps.meta.outputs.tags }}' | cut -d',' -f1) \\"
+          echo "     --region ${{ secrets.REGION }} \\"
+          echo "     --platform managed"
