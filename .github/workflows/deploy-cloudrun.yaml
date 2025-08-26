@@ -1,0 +1,114 @@
+name: Deploy to Cloud Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      module:
+        description: 'Module to deploy (v1-cloud-run or v2-firestore)'
+        required: true
+        type: choice
+        options:
+          - v1-cloud-run
+          - v2-firestore
+      image_tag:
+        description: 'Docker image tag to deploy (e.g., latest, abc1234)'
+        required: false
+        default: 'latest'
+      allow_unauthenticated:
+        description: 'Allow unauthenticated access'
+        required: true
+        type: boolean
+        default: true
+
+env:
+  GAR_REPOSITORY: samples
+
+permissions:
+  contents: read
+  id-token: write # OIDC トークンの取得に必要
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # OIDC による GCP 認証
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Prepare deployment config
+        id: config
+        run: |
+          MODULE="${{ inputs.module }}"
+          SERVICE_NAME=${MODULE/v[0-9]-/}  # v1-cloud-run -> cloud-run
+          IMAGE_NAME="${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/$SERVICE_NAME:${{ inputs.image_tag }}"
+          
+          echo "service_name=$SERVICE_NAME" >> $GITHUB_OUTPUT
+          echo "image=$IMAGE_NAME" >> $GITHUB_OUTPUT
+          
+          # 環境変数の設定
+          if [[ "$MODULE" == "v1-cloud-run" ]]; then
+            echo "env_vars=TARGET=Production" >> $GITHUB_OUTPUT
+          elif [[ "$MODULE" == "v2-firestore" ]]; then
+            echo "env_vars=PROJECT_ID=${{ secrets.PROJECT_ID }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy to Cloud Run
+        run: |
+          DEPLOY_CMD="gcloud run deploy ${{ steps.config.outputs.service_name }} \
+            --image ${{ steps.config.outputs.image }} \
+            --region ${{ secrets.REGION }} \
+            --platform managed \
+            --port 8080 \
+            --memory 512Mi \
+            --cpu 1 \
+            --timeout 300 \
+            --concurrency 80 \
+            --min-instances 0 \
+            --max-instances 100"
+          
+          # 環境変数の設定
+          if [[ -n "${{ steps.config.outputs.env_vars }}" ]]; then
+            DEPLOY_CMD="$DEPLOY_CMD --set-env-vars ${{ steps.config.outputs.env_vars }}"
+          fi
+          
+          # 認証設定
+          if [[ "${{ inputs.allow_unauthenticated }}" == "true" ]]; then
+            DEPLOY_CMD="$DEPLOY_CMD --allow-unauthenticated"
+          else
+            DEPLOY_CMD="$DEPLOY_CMD --no-allow-unauthenticated"
+          fi
+          
+          echo "🚀 Deploying with command:"
+          echo "$DEPLOY_CMD"
+          
+          eval $DEPLOY_CMD
+
+      - name: Get service URL
+        run: |
+          SERVICE_URL=$(gcloud run services describe ${{ steps.config.outputs.service_name }} \
+            --region ${{ secrets.REGION }} \
+            --format 'value(status.url)')
+          
+          echo "✅ Deployment successful!"
+          echo "🔗 Service URL: $SERVICE_URL"
+          echo ""
+          echo "📝 Test the service:"
+          echo "   curl $SERVICE_URL"
+          if [[ "${{ inputs.module }}" == "v1-cloud-run" ]]; then
+            echo "   curl $SERVICE_URL/healthz"
+            echo "   curl $SERVICE_URL/readyz"
+          elif [[ "${{ inputs.module }}" == "v2-firestore" ]]; then
+            echo "   curl $SERVICE_URL/healthz"
+            echo "   curl $SERVICE_URL/readyz"
+            echo "   curl -X POST $SERVICE_URL/todos -H 'Content-Type: application/json' -d '{\"title\":\"Test\",\"completed\":false}'"
+          fi
