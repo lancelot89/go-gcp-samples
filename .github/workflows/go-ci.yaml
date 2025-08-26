@@ -23,10 +23,18 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Install golangci-lint
+      - name: Run golangci-lint for v1-cloud-run
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
+          working-directory: v1-cloud-run
+          args: --timeout=5m
+
+      - name: Run golangci-lint for v2-firestore
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: v2-firestore
           args: --timeout=5m
 
   test:
